@@ -1,0 +1,1235 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Камера</title>
+  <style>
+    :root {
+      --ink: #14121a;
+      --ink-2: #100e16;
+      --panel: #1e1b26;
+      --panel-2: #272332;
+      --well: #17141f;
+      --line: #322d3f;
+      --line-2: #403a50;
+      --text: #ece7f0;
+      --muted: #968da5;
+      --muted-2: #6e6781;
+      --safelight: #ffb14e;
+      --safelight-soft: #3a2c16;
+      --focus: #66e0c0;
+      --r-css: 50%;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+      --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(1100px 600px at 78% -10%, #221a2e 0%, transparent 60%),
+        radial-gradient(900px 700px at -8% 110%, #1a2230 0%, transparent 55%),
+        var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      min-height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    /* ---------- Top bar ---------- */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 14px clamp(16px, 3vw, 30px);
+      background: linear-gradient(var(--ink-2), rgba(16, 14, 22, .78));
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mark {
+      width: 30px;
+      height: 30px;
+      color: var(--safelight);
+      display: block;
+      flex: none;
+    }
+
+    .mk-ring {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    .mk-iris {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.4;
+    }
+
+    .mk-spoke line {
+      stroke: currentColor;
+      stroke-width: .9;
+      opacity: .45;
+    }
+
+    .brand-txt {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.04;
+    }
+
+    .eyebrow {
+      font: 600 10px/1 var(--mono);
+      letter-spacing: .32em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .brand-txt strong {
+      font-size: 16px;
+      letter-spacing: .2px;
+      margin-top: 5px;
+    }
+
+    .status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-pill {
+      font: 600 11px/1 var(--mono);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 7px 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .status-pill::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted-2);
+    }
+
+    .status-pill[data-live="1"] {
+      color: var(--safelight);
+      border-color: var(--safelight-soft);
+    }
+
+    .status-pill[data-live="1"]::before {
+      background: var(--safelight);
+      animation: pulse 1.4s ease infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .3
+      }
+    }
+
+    .ghost-btn {
+      font: 600 13px var(--sans);
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--line-2);
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: border-color .15s, background .15s;
+    }
+
+    .ghost-btn:hover {
+      border-color: var(--safelight);
+    }
+
+    kbd {
+      font: 600 11px/1 var(--mono);
+      color: var(--text);
+      background: linear-gradient(#2c2837, #211e2b);
+      border: 1px solid var(--line-2);
+      border-bottom-width: 2px;
+      border-radius: 6px;
+      padding: 4px 6px;
+      min-width: 18px;
+      text-align: center;
+      display: inline-block;
+    }
+
+    /* ---------- Main grid ---------- */
+    .main {
+      display: grid;
+      gap: clamp(14px, 2vw, 22px);
+      grid-template-columns: 1fr;
+      padding: clamp(16px, 2.4vw, 26px);
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, var(--panel), #1a1722);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: clamp(14px, 1.8vw, 20px);
+      animation: rise .4s ease both;
+    }
+
+    .panel:nth-child(2) {
+      animation-delay: .06s;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin: 0 2px 14px;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 13px;
+      letter-spacing: .04em;
+    }
+
+    .panel-head .hint {
+      margin-left: auto;
+      font: 500 11px var(--mono);
+      color: var(--muted-2);
+    }
+
+    /* ---------- Viewfinder ---------- */
+    .frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1/1;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0d0b12;
+      border: 1px solid var(--line-2);
+      cursor: grab;
+      touch-action: none;
+      box-shadow: inset 0 0 60px rgba(0, 0, 0, .55);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .frame.grabbing {
+      cursor: grabbing;
+    }
+
+    .frame.is-empty {
+      cursor: default;
+    }
+
+    .frame.drop {
+      border-color: var(--safelight);
+    }
+
+    #stage {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+
+    /* rule-of-thirds grid */
+    .thirds {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity .2s;
+      pointer-events: none;
+    }
+
+    .frame.framing .thirds {
+      opacity: .9;
+    }
+
+    .thirds .ln {
+      position: absolute;
+      background: rgba(255, 255, 255, .16);
+    }
+
+    .thirds .v {
+      top: 0;
+      bottom: 0;
+      width: 1px;
+    }
+
+    .thirds .h {
+      left: 0;
+      right: 0;
+      height: 1px;
+    }
+
+    /* crop dimmer: amber outline of the kept shape + darkened corners that get clipped */
+    .dimmer {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      border-radius: var(--r-css);
+      box-shadow: 0 0 0 1.5px rgba(255, 177, 78, .92), 0 0 0 1200px rgba(13, 11, 18, .62);
+      transition: border-radius .26s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    /* sensor corner brackets */
+    .brackets {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .bk {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--safelight);
+      opacity: .85;
+    }
+
+    .bk.tl {
+      top: 11px;
+      left: 11px;
+      border-right: 0;
+      border-bottom: 0;
+    }
+
+    .bk.tr {
+      top: 11px;
+      right: 11px;
+      border-left: 0;
+      border-bottom: 0;
+    }
+
+    .bk.bl {
+      bottom: 11px;
+      left: 11px;
+      border-right: 0;
+      border-top: 0;
+    }
+
+    .bk.br {
+      bottom: 11px;
+      right: 11px;
+      border-left: 0;
+      border-top: 0;
+    }
+
+    .vignette {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      background: radial-gradient(120% 120% at 50% 45%, transparent 58%, rgba(0, 0, 0, .34));
+    }
+
+    .readout {
+      position: absolute;
+      left: 12px;
+      bottom: 11px;
+      z-index: 6;
+      pointer-events: none;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font: 600 11px/1 var(--mono);
+      letter-spacing: .06em;
+      background: rgba(13, 11, 18, .55);
+      border: 1px solid rgba(255, 255, 255, .08);
+      padding: 6px 9px;
+      border-radius: 8px;
+      backdrop-filter: blur(3px);
+    }
+
+    .readout span {
+      color: var(--text);
+    }
+
+    .readout .ro-dim {
+      color: var(--muted);
+    }
+
+    .empty {
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      display: none;
+      pointer-events: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .frame.is-empty .empty {
+      display: flex;
+    }
+
+    .empty .ic {
+      width: 46px;
+      height: 46px;
+      color: var(--muted);
+      opacity: .8;
+    }
+
+    .empty p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13.5px;
+      max-width: 230px;
+      line-height: 1.5;
+    }
+
+    .empty .keys {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* ---------- Controls ---------- */
+    .toolrow {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .tool-btn {
+      flex: 1 1 auto;
+      min-width: 96px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font: 600 13px var(--sans);
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--line-2);
+      border-radius: 11px;
+      padding: 11px 12px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, transform .05s;
+    }
+
+    .tool-btn:hover {
+      border-color: var(--safelight);
+    }
+
+    .tool-btn:active {
+      transform: translateY(1px);
+    }
+
+    .tool-btn svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .tool-btn.primary {
+      background: linear-gradient(#ffbf66, #f5a23a);
+      color: #3a2400;
+      border-color: transparent;
+    }
+
+    .tool-btn[aria-pressed="true"] {
+      border-color: var(--safelight);
+      color: var(--safelight);
+    }
+
+    .tool-btn .k {
+      font: 600 10px var(--mono);
+      opacity: .7;
+    }
+
+    .ctl {
+      margin-top: 16px;
+    }
+
+    .ctl-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+
+    .ctl-head .label {
+      font: 600 11px var(--mono);
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .ctl-head .val {
+      margin-left: auto;
+      font: 600 13px var(--mono);
+      color: var(--safelight);
+    }
+
+    .ctl-head .k {
+      font: 600 10px var(--mono);
+      color: var(--muted-2);
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: 2px 5px;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 30px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type=range]::-webkit-slider-runnable-track {
+      height: 5px;
+      border-radius: 999px;
+      background: var(--well);
+      border: 1px solid var(--line);
+    }
+
+    input[type=range]::-moz-range-track {
+      height: 5px;
+      border-radius: 999px;
+      background: var(--well);
+      border: 1px solid var(--line);
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      margin-top: -8px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--safelight);
+      border: 3px solid #2a2230;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .45);
+    }
+
+    input[type=range]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: 3px solid #2a2230;
+      border-radius: 50%;
+      background: var(--safelight);
+    }
+
+    .presets {
+      display: flex;
+      gap: 7px;
+      margin-top: 11px;
+      flex-wrap: wrap;
+    }
+
+    .preset {
+      flex: 1 1 0;
+      min-width: 52px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      background: var(--well);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 6px;
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+
+    .preset:hover {
+      border-color: var(--line-2);
+    }
+
+    .preset[aria-pressed="true"] {
+      border-color: var(--safelight);
+      background: #241d2b;
+    }
+
+    .preset .sw {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, #5a5366, #3a3547);
+    }
+
+    .preset .nm {
+      font: 600 9px var(--mono);
+      letter-spacing: .06em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .preset[aria-pressed="true"] .nm {
+      color: var(--safelight);
+    }
+
+    /* ---------- Keyboard rail ---------- */
+    .rail {
+      border-top: 1px solid var(--line);
+      background: linear-gradient(rgba(16, 14, 22, .6), var(--ink-2));
+      padding: 11px clamp(16px, 3vw, 30px);
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .rail .grp {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+
+    .rail .grp .keys {
+      display: inline-flex;
+      gap: 3px;
+    }
+
+    .rail .sep {
+      width: 1px;
+      height: 16px;
+      background: var(--line-2);
+    }
+
+    .rail .more {
+      margin-left: auto;
+    }
+
+    /* ---------- Help overlay ---------- */
+    .help {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      background: rgba(8, 7, 12, .66);
+      backdrop-filter: blur(6px);
+    }
+
+    .help[hidden] {
+      display: none;
+    }
+
+    .help-card {
+      width: min(560px, 100%);
+      max-height: 86vh;
+      overflow: auto;
+      background: linear-gradient(180deg, var(--panel), #191620);
+      border: 1px solid var(--line-2);
+      border-radius: 18px;
+      padding: 22px 24px;
+    }
+
+    .help-card header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .help-card h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .help-card .close {
+      margin-left: auto;
+    }
+
+    .help-card .lede {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0 0 18px;
+      line-height: 1.5;
+    }
+
+    .kgrp {
+      margin-bottom: 16px;
+    }
+
+    .kgrp h4 {
+      margin: 0 0 9px;
+      font: 600 10px var(--mono);
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--safelight);
+    }
+
+    .krow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 7px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .krow:first-of-type {
+      border-top: 0;
+    }
+
+    .krow .desc {
+      font-size: 13.5px;
+      color: var(--text);
+    }
+
+    .krow .combo {
+      margin-left: auto;
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .krow .combo .plus {
+      color: var(--muted-2);
+      font-size: 11px;
+    }
+
+    /* ---------- Toast ---------- */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 78px;
+      transform: translate(-50%, 16px);
+      z-index: 70;
+      background: #2a2230;
+      color: var(--text);
+      border: 1px solid var(--line-2);
+      border-left: 3px solid var(--safelight);
+      padding: 11px 15px;
+      border-radius: 11px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s, transform .2s;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, .4);
+      max-width: 86vw;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+      border-radius: 6px;
+    }
+
+    .frame:focus-visible {
+      outline-offset: -2px;
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      * {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
+    @media (max-width:520px) {
+      .toolrow .tool-btn {
+        flex-basis: calc(50% - 4px);
+      }
+
+      .rail .grp:nth-child(n+7) {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- LEFT: viewfinder -->
+      <section class="panel" aria-label="Кадрирование">
+        <div class="panel-head">
+          <h2>Кадр</h2>
+          <span class="hint">тяните, чтобы двигать · колесо — масштаб</span>
+        </div>
+
+        <div id="frame" class="frame is-empty" tabindex="0" role="img"
+          aria-label="Область кадрирования аватара. Стрелки двигают, плюс и минус меняют масштаб.">
+          <canvas id="stage"></canvas>
+          <div class="thirds" aria-hidden="true">
+            <span class="ln v" style="left:33.33%"></span><span class="ln v" style="left:66.66%"></span>
+            <span class="ln h" style="top:33.33%"></span><span class="ln h" style="top:66.66%"></span>
+          </div>
+          <div class="dimmer" aria-hidden="true"></div>
+          <div class="brackets" aria-hidden="true">
+            <span class="bk tl"></span><span class="bk tr"></span><span class="bk bl"></span><span class="bk br"></span>
+          </div>
+          <div class="vignette" aria-hidden="true"></div>
+          <div class="readout" aria-hidden="true">
+            <span id="roR">R 50%</span><span id="roZ">1.00×</span><span class="ro-dim">512²</span>
+          </div>
+          <div class="empty">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path d="M3 8.5A2 2 0 0 1 5 6.5h2l1.2-2h7.6L18 6.5h1a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <circle cx="12" cy="13" r="3.6" />
+            </svg>
+            <p>Перетащите фото сюда, вставьте из буфера или используйте кнопки ниже.</p>
+            <div class="keys"><kbd>U</kbd> <kbd>C</kbd></div>
+          </div>
+        </div>
+
+        <div class="toolrow">
+          <button id="uploadBtn" class="tool-btn primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M12 16V4M7 9l5-5 5 5" />
+              <path d="M5 20h14" />
+            </svg>
+            Загрузить <span class="k">U</span>
+          </button>
+          <button id="camBtn" class="tool-btn" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M3 8.5A2 2 0 0 1 5 6.5h2l1.2-2h7.6L18 6.5h1a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <circle cx="12" cy="13" r="3.4" />
+            </svg>
+            Камера <span class="k">C</span>
+          </button>
+          <button id="capBtn" class="tool-btn" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <circle cx="12" cy="12" r="8" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            Снять <span class="k">⏎</span>
+          </button>
+          <button id="resetBtn" class="tool-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 3-6.7" />
+              <path d="M3 4v4h4" />
+            </svg>
+            Сброс <span class="k">Z</span>
+          </button>
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-head">
+            <span class="label">Скругление</span>
+            <span class="k">[ ]</span>
+          </div>
+          <input id="round" type="range" min="0" max="50" step="1" value="50" aria-label="Скругление углов, проценты" />
+          <div class="presets" role="group" aria-label="Пресеты скругления">
+            <button class="preset" aria-pressed="false" aria-label="Квадрат, 0%"><span class="sw"
+                style="border-radius:0"></span><span class="nm">квадрат</span></button>
+            <button class="preset" aria-pressed="false" aria-label="Мягкий, 12%"><span class="sw"
+                style="border-radius:14%"></span><span class="nm">мягкий</span></button>
+            <button class="preset" aria-pressed="false" aria-label="Скруглённый, 25%"><span class="sw"
+                style="border-radius:28%"></span><span class="nm">скругл.</span></button>
+            <button class="preset" aria-pressed="false" aria-label="Сквиркл, 40%"><span class="sw"
+                style="border-radius:44%"></span><span class="nm">сквиркл</span></button>
+            <button class="preset" aria-pressed="false" aria-label="Круг, 50%"><span class="sw"
+                style="border-radius:50%"></span><span class="nm">круг</span></button>
+          </div>
+        </div>
+
+
+    </main>
+
+    <!-- KEYBOARD RAIL -->
+    <footer class="rail" aria-hidden="true">
+      <span class="grp"><span class="keys"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span> кадрировать</span>
+      <span class="sep"></span>
+      <span class="grp"><span class="keys"><kbd>+</kbd><kbd>−</kbd></span> масштаб</span>
+      <span class="sep"></span>
+      <span class="grp"><kbd>U</kbd> загрузить</span>
+      <span class="sep"></span>
+      <span class="grp"><kbd>C</kbd> камера</span>
+      <span class="sep"></span>
+      <span class="grp"><kbd>S</kbd> скачать</span>
+      <span class="grp more"><kbd>?</kbd> все клавиши</span>
+    </footer>
+  </div>
+
+  <!-- HELP OVERLAY -->
+  <div id="help" class="help" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
+    <div class="help-card">
+      <header>
+        <h3 id="helpTitle">Управление с клавиатуры</h3>
+        <button id="helpClose" class="ghost-btn close">Закрыть <kbd>Esc</kbd></button>
+      </header>
+      <p class="lede">Всё приложение работает без мыши. Стрелки всегда кадрируют активный снимок; ползунки можно
+        подкручивать стрелками, когда они в фокусе.</p>
+
+      <div class="kgrp">
+        <h4>Кадрирование</h4>
+        <div class="krow"><span class="desc">Двигать изображение</span><span
+            class="combo"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span></div>
+        <div class="krow"><span class="desc">Двигать быстрее</span><span class="combo"><kbd>Shift</kbd><span
+              class="plus">+</span><kbd>↔</kbd></span></div>
+        <div class="krow"><span class="desc">Приблизить / отдалить</span><span
+            class="combo"><kbd>+</kbd><kbd>−</kbd></span></div>
+        <div class="krow"><span class="desc">Сбросить рамку</span><span class="combo"><kbd>Z</kbd></span></div>
+      </div>
+
+      <div class="kgrp">
+        <h4>Скругление</h4>
+        <div class="krow"><span class="desc">Меньше / больше скругление</span><span
+            class="combo"><kbd>[</kbd><kbd>]</kbd></span></div>
+        <div class="krow"><span class="desc">Пресеты: квадрат → круг</span><span
+            class="combo"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd></span></div>
+      </div>
+
+      <div class="kgrp">
+        <h4>Источник</h4>
+        <div class="krow"><span class="desc">Загрузить файл</span><span class="combo"><kbd>U</kbd></span></div>
+        <div class="krow"><span class="desc">Включить / выключить камеру</span><span class="combo"><kbd>C</kbd></span>
+        </div>
+        <div class="krow"><span class="desc">Снять кадр (когда камера активна)</span><span
+            class="combo"><kbd>Enter</kbd><span class="plus">/</span><kbd>Space</kbd></span></div>
+        <div class="krow"><span class="desc">Вставить из буфера</span><span class="combo"><kbd>Ctrl</kbd><span
+              class="plus">+</span><kbd>V</kbd></span></div>
+      </div>
+
+      <div class="kgrp">
+        <h4>Вид и сохранение</h4>
+
+        <div class="krow"><span class="desc">Скачать PNG</span><span class="combo"><kbd>S</kbd></span></div>
+        <div class="krow"><span class="desc">Показать / скрыть эти подсказки</span><span
+            class="combo"><kbd>?</kbd></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+  <div id="live" class="sr-only" aria-live="polite"></div>
+  <input id="file" type="file" accept="image/*" class="sr-only" tabindex="-1" aria-hidden="true" />
+
+  <script>
+    (function () {
+      "use strict";
+      const $ = s => document.querySelector(s);
+      const $$ = s => Array.prototype.slice.call(document.querySelectorAll(s));
+
+      const CS = 512;                          // master canvas resolution
+      const stage = $('#stage');
+      const sctx = stage.getContext('2d');
+      stage.width = CS; stage.height = CS;
+
+      const frame = $('#frame');
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const video = document.createElement('video');
+      video.playsInline = true; video.muted = true; video.setAttribute('playsinline', '');
+
+      const PRESETS = [0, 12, 25, 40, 50];
+
+      const state = { img: null, scale: 1, offX: 0, offY: 0, radius: 50, cameraOn: false, stream: null };
+
+      /* ---------- rendering ---------- */
+      function srcDims() {
+        if (state.cameraOn && video.videoWidth) return [video, video.videoWidth, video.videoHeight];
+        if (state.img) return [state.img, state.img.naturalWidth || state.img.width, state.img.naturalHeight || state.img.height];
+        return [null, 0, 0];
+      }
+      function drawDims() {
+        const d = srcDims(); if (!d[0]) return { dw: 0, dh: 0 };
+        const base = Math.max(CS / d[1], CS / d[2]); const eff = base * state.scale;
+        return { dw: d[1] * eff, dh: d[2] * eff };
+      }
+      function clampOffsets() {
+        const { dw, dh } = drawDims();
+        const mx = Math.max(0, (dw - CS) / 2), my = Math.max(0, (dh - CS) / 2);
+        state.offX = Math.min(mx, Math.max(-mx, state.offX));
+        state.offY = Math.min(my, Math.max(-my, state.offY));
+      }
+      function drawMaster() {
+        sctx.clearRect(0, 0, CS, CS);
+        sctx.fillStyle = '#0d0b12'; sctx.fillRect(0, 0, CS, CS);
+        const d = srcDims();
+        if (d[0]) {
+          const base = Math.max(CS / d[1], CS / d[2]); const eff = base * state.scale;
+          const dw = d[1] * eff, dh = d[2] * eff;
+          sctx.drawImage(d[0], (CS - dw) / 2 + state.offX, (CS - dh) / 2 + state.offY, dw, dh);
+        }
+      }
+
+      /* ---------- live helpers ---------- */
+      function setRadiusCSS() { document.documentElement.style.setProperty('--r-css', state.radius + '%'); }
+      function updateReadout() {
+        $('#roR').textContent = 'R ' + state.radius + '%';
+        $('#roZ').textContent = state.scale.toFixed(2) + '×';
+        $('#roundVal').textContent = state.radius + '%';
+        $('#zoomVal').textContent = state.scale.toFixed(2) + '×';
+      }
+      function announce(m) { $('#live').textContent = m; }
+      function setStatus(t, live) { const el = $('#status'); el.textContent = t; el.setAttribute('data-live', live ? '1' : '0'); }
+
+      let frTimer = null;
+      function flashFraming() { frame.classList.add('framing'); clearTimeout(frTimer); frTimer = setTimeout(() => frame.classList.remove('framing'), 650); }
+
+      let toastTimer = null;
+      function toast(m) {
+        const el = $('#toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 2600); announce(m);
+      }
+
+      /* ---------- actions ---------- */
+      function setImage(img) {
+        state.img = img; state.scale = 1; state.offX = 0; state.offY = 0;
+        $('#zoom').value = 1;
+        frame.classList.remove('is-empty');
+        drawMaster(); updateReadout(); setStatus('фото готово', false);
+      }
+      function loadFile(file) {
+        if (!file || !file.type || file.type.indexOf('image/') !== 0) { toast('Нужен файл изображения'); return; }
+        const img = new Image();
+        img.onload = () => { setImage(img); announce('Фото загружено'); };
+        img.onerror = () => toast('Не удалось открыть изображение');
+        img.src = URL.createObjectURL(file);
+      }
+
+      let rafId = null;
+      function loop() { if (!state.cameraOn) return; drawMaster(); updateReadout(); rafId = requestAnimationFrame(loop); }
+      async function toggleCamera() {
+        if (state.cameraOn) { stopCamera(); return; }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { toast('Камера недоступна в этом окне'); return; }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
+          state.stream = stream; video.srcObject = stream; await video.play();
+          state.cameraOn = true; state.img = null; state.scale = 1; state.offX = 0; state.offY = 0; $('#zoom').value = 1;
+          frame.classList.remove('is-empty');
+          $('#capBtn').hidden = false; $('#camBtn').setAttribute('aria-pressed', 'true');
+          setStatus('камера', true); announce('Камера включена'); loop();
+        } catch (err) { toast('Не удалось включить камеру (' + (err && err.name || 'ошибка') + ')'); }
+      }
+      function stopCamera() {
+        state.cameraOn = false; if (rafId) cancelAnimationFrame(rafId);
+        if (state.stream) { state.stream.getTracks().forEach(t => t.stop()); state.stream = null; }
+        $('#capBtn').hidden = true; $('#camBtn').setAttribute('aria-pressed', 'false');
+        if (!state.img) { frame.classList.add('is-empty'); setStatus('нет фото', false); }
+      }
+      function capture() {
+        if (!state.cameraOn || !video.videoWidth) return;
+        const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight;
+        c.getContext('2d').drawImage(video, 0, 0);
+        const img = new Image();
+        img.onload = () => { stopCamera(); setImage(img); announce('Кадр снят'); };
+        img.src = c.toDataURL('image/png');
+      }
+
+      function setRadius(v) {
+        state.radius = Math.max(0, Math.min(50, Math.round(v)));
+        $('#round').value = state.radius;
+        setRadiusCSS(); updateReadout(); updatePresetActive();
+        announce('Скругление ' + state.radius + '%');
+      }
+      function updatePresetActive() {
+        $$('.preset').forEach((b, i) => b.setAttribute('aria-pressed', String(PRESETS[i] === state.radius)));
+      }
+      function zoomBy(d) {
+        state.scale = Math.max(1, Math.min(4, +(state.scale + d).toFixed(2)));
+        $('#zoom').value = state.scale; clampOffsets(); drawMaster(); updateReadout(); flashFraming();
+      }
+      function pan(dx, dy) {
+        if (!state.img && !state.cameraOn) return;
+        state.offX += dx; state.offY += dy; clampOffsets(); drawMaster(); flashFraming();
+      }
+      function resetFrame() {
+        state.scale = 1; state.offX = 0; state.offY = 0; $('#zoom').value = 1;
+        clampOffsets(); drawMaster(); updateReadout(); announce('Рамка сброшена');
+      }
+
+
+      function roundRect(ctx, x, y, w, h, r) {
+        r = Math.min(r, w / 2, h / 2);
+        ctx.beginPath(); ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+      }
+      function exportPNG() {
+        if (!state.img && !state.cameraOn) { toast('Сначала добавьте фото'); return; }
+        const size = 512, out = document.createElement('canvas'); out.width = size; out.height = size;
+        const o = out.getContext('2d');
+        o.drawImage(stage, 0, 0, CS, CS, 0, 0, size, size);
+        o.globalCompositeOperation = 'destination-in';
+        roundRect(o, 0, 0, size, size, (state.radius / 100) * size); o.fillStyle = '#fff'; o.fill();
+        out.toBlob(function (b) {
+          if (!b) { toast('Не удалось сохранить'); return; }
+          const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'avatar.png';
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000); announce('PNG сохранён');
+        }, 'image/png');
+      }
+
+      /* ---------- help ---------- */
+      function setHelp(show) {
+        $('#help').hidden = !show;
+        if (show) { $('#helpClose').focus(); } else { frame.focus(); }
+      }
+
+      /* ---------- pointer / drag ---------- */
+      let dragging = false, lastX = 0, lastY = 0;
+      frame.addEventListener('pointerdown', e => {
+        if (frame.classList.contains('is-empty')) return;
+        dragging = true; lastX = e.clientX; lastY = e.clientY;
+        frame.setPointerCapture(e.pointerId); frame.classList.add('grabbing', 'framing');
+      });
+      frame.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        const ratio = CS / (frame.clientWidth || CS);
+        state.offX += (e.clientX - lastX) * ratio;
+        state.offY += (e.clientY - lastY) * ratio;
+        lastX = e.clientX; lastY = e.clientY;
+        clampOffsets(); drawMaster();
+      });
+      function endDrag() { dragging = false; frame.classList.remove('grabbing'); flashFraming(); }
+      frame.addEventListener('pointerup', endDrag);
+      frame.addEventListener('pointercancel', endDrag);
+      frame.addEventListener('wheel', e => {
+        if (frame.classList.contains('is-empty')) return;
+        e.preventDefault(); zoomBy(e.deltaY < 0 ? 0.08 : -0.08);
+      }, { passive: false });
+
+      /* drag & drop + paste */
+      ['dragenter', 'dragover'].forEach(ev => frame.addEventListener(ev, e => { e.preventDefault(); frame.classList.add('drop'); }));
+      ['dragleave', 'drop'].forEach(ev => frame.addEventListener(ev, e => { e.preventDefault(); frame.classList.remove('drop'); }));
+      frame.addEventListener('drop', e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) loadFile(f); });
+      window.addEventListener('paste', e => {
+        const items = e.clipboardData && e.clipboardData.items; if (!items) return;
+        for (let i = 0; i < items.length; i++) { if (items[i].type.indexOf('image/') === 0) { loadFile(items[i].getAsFile()); break; } }
+      });
+
+      /* ---------- keyboard ---------- */
+      function panStep(e) { return e.shiftKey ? 56 : 16; }
+      window.addEventListener('keydown', e => {
+        const t = e.target;
+        const onRange = t && t.tagName === 'INPUT' && t.type === 'range';
+        const typing = t && (t.tagName === 'TEXTAREA' || t.isContentEditable);
+
+        if (!$('#help').hidden) { if (e.key === 'Escape') { e.preventDefault(); setHelp(false); } return; }
+        if (typing) return;
+
+        switch (e.key) {
+          case 'ArrowLeft': if (onRange) return; e.preventDefault(); pan(-panStep(e), 0); break;
+          case 'ArrowRight': if (onRange) return; e.preventDefault(); pan(panStep(e), 0); break;
+          case 'ArrowUp': if (onRange) return; e.preventDefault(); pan(0, -panStep(e)); break;
+          case 'ArrowDown': if (onRange) return; e.preventDefault(); pan(0, panStep(e)); break;
+
+          case '[': case 'х': setRadius(state.radius - 2); break;
+          case ']': case 'ъ': setRadius(state.radius + 2); break;
+          case '+': case '=': e.preventDefault(); zoomBy(0.1); break;
+          case '-': case '_': e.preventDefault(); zoomBy(-0.1); break;
+
+          case 'z': case 'Z': case 'я': resetFrame(); break;
+          case 'u': case 'U': case 'г': $('#file').click(); break;
+          case 'c': case 'C': case 'с': toggleCamera(); break;
+          case 's': case 'S': case 'ы': e.preventDefault(); exportPNG(); break;
+          case 'h': case 'H': case 'р': setHelp(true); break;
+          case '?': e.preventDefault(); setHelp(true); break;
+
+          case 'Enter': case ' ': if (state.cameraOn) { e.preventDefault(); capture(); } break;
+          case 'Escape': if (state.cameraOn) stopCamera(); break;
+
+          default:
+            if (e.key >= '1' && e.key <= '5') { setRadius(PRESETS[(+e.key) - 1]); }
+        }
+      });
+
+      /* ---------- wiring ---------- */
+      $('#uploadBtn').onclick = () => $('#file').click();
+      $('#camBtn').onclick = toggleCamera;
+      $('#capBtn').onclick = capture;
+      $('#resetBtn').onclick = resetFrame;
+      $('#helpBtn').onclick = () => setHelp(true);
+      $('#helpClose').onclick = () => setHelp(false);
+      $('#help').addEventListener('click', e => { if (e.target.id === 'help') setHelp(false); });
+
+      $('#file').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ''; });
+      $('#round').addEventListener('input', e => setRadius(parseInt(e.target.value, 10)));
+      $('#zoom').addEventListener('input', e => { state.scale = parseFloat(e.target.value); clampOffsets(); drawMaster(); updateReadout(); flashFraming(); });
+
+      $$('.preset').forEach((b, i) => b.addEventListener('click', () => setRadius(PRESETS[i])));
+
+      /* ---------- init ---------- */
+      setRadiusCSS(); updateReadout(); updatePresetActive();
+      // ensure preview canvases get sized after layout settles
+      requestAnimationFrame(() => { drawMaster(); requestAnimationFrame(drawMaster); });
+      toggleCamera();
+    })();
+  </script>
+</body>
+
+</html>
