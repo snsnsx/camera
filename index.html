@@ -47,15 +47,13 @@
 
     /* ---------- Top bar ---------- */
     .topbar {
-      position: sticky;
       top: 0;
-      z-index: 30;
+      z-index: 20;
       display: flex;
       align-items: center;
-      gap: 18px;
-      padding: 14px clamp(16px, 3vw, 30px);
+      gap: 12px;
+      padding: 10px clamp(16px, 3vw, 30px);
       background: linear-gradient(var(--ink-2), rgba(16, 14, 22, .78));
-      backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--line);
     }
 
@@ -419,7 +417,6 @@
     <header class="topbar">
       <div class="brand">
         <div class="brand-txt">
-          <span class="eyebrow">Studio</span>
           <strong>Камера</strong>
         </div>
       </div>
